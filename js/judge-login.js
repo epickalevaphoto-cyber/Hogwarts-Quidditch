@@ -1,0 +1,1 @@
+import{login}from'./supabase.js';loginForm.onsubmit=async e=>{e.preventDefault();try{await login(username.value.trim(),password.value,['judge','admin']);location='judge.html'}catch(x){msg.textContent=x.message}};
