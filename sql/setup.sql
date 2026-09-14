@@ -1,0 +1,9 @@
+create extension if not exists pgcrypto with schema extensions;
+create table if not exists public.users(id uuid primary key default gen_random_uuid(),username text unique not null,password_hash text not null,display_name text not null,role text not null default 'player' check(role in('player','captain','judge','admin')),created_at timestamptz default now());
+create table if not exists public.chat_messages(id uuid primary key default gen_random_uuid(),match_id uuid not null references public.matches(id) on delete cascade,user_id uuid not null,username text not null,display_name text,message text not null check(length(trim(message)) between 1 and 500),created_at timestamptz default now());
+alter table public.chat_messages enable row level security;
+drop policy if exists chat_read on public.chat_messages; create policy chat_read on public.chat_messages for select using(true);
+drop policy if exists chat_insert on public.chat_messages; create policy chat_insert on public.chat_messages for insert with check(true);
+create or replace function public.login_player(p_username text,p_password text) returns table(id uuid,username text,display_name text,role text) language sql security definer set search_path=public,extensions as $$ select u.id,u.username,u.display_name,u.role from public.users u where lower(trim(u.username))=lower(trim(p_username)) and u.password_hash=encode(extensions.digest(p_password::text,'sha256'::text),'hex') limit 1; $$;
+grant execute on function public.login_player(text,text) to anon,authenticated;
+insert into public.users(username,password_hash,display_name,role) values('judge',encode(extensions.digest('123456'::text,'sha256'::text),'hex'),'Главный судья','judge') on conflict(username) do update set password_hash=excluded.password_hash,display_name=excluded.display_name,role=excluded.role;
