@@ -1,1 +1,38 @@
-import{login}from'./supabase.js';loginForm.onsubmit=async e=>{e.preventDefault();try{await login(username.value.trim(),password.value,['player','captain']);location='player.html'}catch(x){msg.textContent=x.message}};
+import { login } from './supabase.js';
+
+const form = document.querySelector('#loginForm');
+const message = document.querySelector('#msg');
+
+form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    message.textContent = 'Проверка данных…';
+    message.className = '';
+
+    const username = document
+        .querySelector('#username')
+        .value
+        .trim();
+
+    const password = document
+        .querySelector('#password')
+        .value;
+
+    try {
+        const user = await login(
+            username,
+            password,
+            ['player', 'captain']
+        );
+
+        console.log('Успешный вход:', user);
+
+        window.location.href = 'player.html';
+
+    } catch (error) {
+        console.error(error);
+
+        message.textContent = error.message;
+        message.className = 'error';
+    }
+});
